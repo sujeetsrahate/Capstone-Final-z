@@ -28,31 +28,40 @@ phases:
   build:
     commands:
       - echo Building frontend Docker image...
-      - sed -i 's|^FROM node:18-alpine|FROM public.ecr.aws/docker/library/node:18-alpine|' $FRONTEND_DIR/Dockerfile || true
-      - sed -i 's|^FROM nginx:alpine|FROM public.ecr.aws/nginx/nginx:alpine|' $FRONTEND_DIR/Dockerfile || true
       - docker build -t $FRONTEND_REPO:$IMAGE_TAG $FRONTEND_DIR
       - docker tag $FRONTEND_REPO:$IMAGE_TAG ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
 
       - echo Building backend Docker image...
-      - sed -i 's|^FROM maven:|FROM public.ecr.aws/docker/library/maven:|' $BACKEND_DIR/Dockerfile || true
-      - sed -i 's|^FROM eclipse-temurin:|FROM public.ecr.aws/amazoncorretto/amazoncorretto:|' $BACKEND_DIR/Dockerfile || true
       - cd $BACKEND_DIR && mvn clean package -DskipTests && cd -
       - docker build -t $BACKEND_REPO:$IMAGE_TAG $BACKEND_DIR
       - docker tag $BACKEND_REPO:$IMAGE_TAG ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo Pushing Docker images to Amazon ECR...
+      - echo Pushing images to ECR...
       - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
       - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
 
       - echo Generating Kubernetes manifests...
       - mkdir -p k8s-out
-      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG|g" $K8S_MANIFEST_DIR/react-event-deploy.yaml > k8s-out/frontend-deployment.yaml
-      - cp $K8S_MANIFEST_DIR/react-event-service.yaml k8s-out/frontend-service.yaml
+      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG|g" $K8S_MANIFEST_DIR/react-event-deploy.yaml > k8s-out/react-event-deploy.yaml
+      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG|g" $K8S_MANIFEST_DIR/springboot-deploy.yaml > k8s-out/springboot-deploy.yaml
+      - cp $K8S_MANIFEST_DIR/react-event-service.yaml k8s-out/react-event-service.yaml
+      - cp $K8S_MANIFEST_DIR/java-springboot-service.yaml k8s-out/java-springboot-service.yaml
+      - cp $K8S_MANIFEST_DIR/mysql-deploy.yaml k8s-out/mysql-deploy.yaml
+      - cp $K8S_MANIFEST_DIR/mysql-service.yaml k8s-out/mysql-service.yaml
+      - cp $K8S_MANIFEST_DIR/pv.yaml k8s-out/pv.yaml
+      - cp $K8S_MANIFEST_DIR/pvc.yaml k8s-out/pvc.yaml
 
 artifacts:
   base-directory: k8s-out
   discard-paths: yes
   files:
-    - '*.yaml'
+    - react-event-deploy.yaml
+    - springboot-deploy.yaml
+    - react-event-service.yaml
+    - java-springboot-service.yaml
+    - mysql-deploy.yaml
+    - mysql-service.yaml
+    - pv.yaml
+    - pvc.yaml
