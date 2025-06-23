@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: react-event-deploy-latest
-  namespace: caps
 spec:
   selector:
     matchLabels:
