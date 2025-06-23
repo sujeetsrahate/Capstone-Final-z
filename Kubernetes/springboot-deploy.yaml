@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: spring-boot-app
-          image: yogeshpri/testimagback:1.0.0
+          image: 026090548352.dkr.ecr.us-east-1.amazonaws.com/capstone-backend:latest
           ports:
             - containerPort: 80
