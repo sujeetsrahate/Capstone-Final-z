@@ -1,0 +1,54 @@
+version: 0.2
+
+env:
+  variables:
+    ACCOUNT_ID: 026090548352
+    REGION: us-east-1
+    FRONTEND_REPO: capstone-frontend
+    BACKEND_REPO: capstone-backend
+    FRONTEND_DIR: Frontend-ReactJs/event-management-dashboard
+    BACKEND_DIR: Backend-Java/Event_Managment
+    K8S_MANIFEST_DIR: Kubernetes
+
+phases:
+  install:
+    runtime-versions:
+      nodejs: 18
+      java: corretto17
+    commands:
+      - echo Installing dependencies...
+      - yum install -y jq maven docker
+
+  pre_build:
+    commands:
+      - echo Logging into Amazon ECR...
+      - export IMAGE_TAG=build-${CODEBUILD_BUILD_NUMBER}
+      - aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
+
+  build:
+    commands:
+      - echo Building frontend Docker image...
+      - docker build -t $FRONTEND_REPO:$IMAGE_TAG $FRONTEND_DIR
+      - docker tag $FRONTEND_REPO:$IMAGE_TAG ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
+
+      - echo Building backend Docker image...
+      - cd $BACKEND_DIR && mvn clean package -DskipTests && cd -
+      - docker build -t $BACKEND_REPO:$IMAGE_TAG $BACKEND_DIR
+      - docker tag $BACKEND_REPO:$IMAGE_TAG ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
+
+  post_build:
+    commands:
+      - echo Pushing images to ECR...
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
+
+      - echo Generating Kubernetes manifests...
+      - mkdir -p k8s-out
+      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG|g" $K8S_MANIFEST_DIR/react-event-deploy.yaml > k8s-out/frontend-deployment.yaml
+      - cp $K8S_MANIFEST_DIR/react-event-service.yaml k8s-out/frontend-service.yaml
+
+artifacts:
+  base-directory: k8s-out
+  discard-paths: yes
+  files:
+    - '*.yaml'
