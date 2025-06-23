@@ -1,10 +1,10 @@
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+FROM public.ecr.aws/docker/library/maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /usr/src/app
 COPY pom.xml . 
 RUN mvn dependency:go-offline
 COPY . .
 RUN mvn clean package -DskipTests
-FROM eclipse-temurin:21-jre-alpine
+FROM public.ecr.aws/amazoncorretto/amazoncorretto:21-alpine
 WORKDIR /app
 COPY --from=build /usr/src/app/target/*.jar app.jar
 EXPOSE 8080
