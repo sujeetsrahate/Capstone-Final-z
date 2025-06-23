@@ -28,17 +28,20 @@ phases:
   build:
     commands:
       - echo Building frontend Docker image...
+      - |
+        sed -i 's|^FROM node:18-alpine|FROM public.ecr.aws/docker/library/node:18-alpine|' $FRONTEND_DIR/Dockerfile || true
+        sed -i 's|^FROM nginx:alpine|FROM public.ecr.aws/nginx/nginx:alpine|' $FRONTEND_DIR/Dockerfile || true
       - docker build -t $FRONTEND_REPO:$IMAGE_TAG $FRONTEND_DIR
       - docker tag $FRONTEND_REPO:$IMAGE_TAG ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
 
-      - echo Building backend Docker image...
+      - echo Building backend JAR and Docker image...
       - cd $BACKEND_DIR && mvn clean package -DskipTests && cd -
       - docker build -t $BACKEND_REPO:$IMAGE_TAG $BACKEND_DIR
       - docker tag $BACKEND_REPO:$IMAGE_TAG ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo Pushing images to ECR...
+      - echo Pushing Docker images to Amazon ECR...
       - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
       - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
 
