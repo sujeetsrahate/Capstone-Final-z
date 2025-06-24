@@ -28,26 +28,26 @@ phases:
   build:
     commands:
       - echo Building frontend Docker image...
-      - docker build -t ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG $FRONTEND_DIR
+      - docker build -t ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${FRONTEND_REPO}:${IMAGE_TAG} ${FRONTEND_DIR}
 
       - echo Building backend application...
-      - cd $BACKEND_DIR
+      - cd ${BACKEND_DIR}
       - mvn clean package -DskipTests
       - echo Building backend Docker image...
-      - docker build -t ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG .
+      - docker build -t ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${BACKEND_REPO}:${IMAGE_TAG} .
       - cd -
 
   post_build:
     commands:
-      - echo Pushing images to ECR...
-      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
-      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
+      - echo Pushing Docker images to ECR...
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${FRONTEND_REPO}:${IMAGE_TAG}
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${BACKEND_REPO}:${IMAGE_TAG}
 
       - echo Generating Kubernetes manifests...
       - mkdir -p k8s-out
-      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG|g" $K8S_MANIFEST_DIR/react-event-deploy.yaml > k8s-out/react-event-deploy.yaml
-      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG|g" $K8S_MANIFEST_DIR/springboot-deploy.yaml > k8s-out/springboot-deploy.yaml
-      - cp $K8S_MANIFEST_DIR/*.yaml k8s-out/
+      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${FRONTEND_REPO}:${IMAGE_TAG}|g" ${K8S_MANIFEST_DIR}/react-event-deploy.yaml > k8s-out/react-event-deploy.yaml
+      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${BACKEND_REPO}:${IMAGE_TAG}|g" ${K8S_MANIFEST_DIR}/springboot-deploy.yaml > k8s-out/springboot-deploy.yaml
+      - cp ${K8S_MANIFEST_DIR}/*.yaml k8s-out/
 
 artifacts:
   base-directory: k8s-out
