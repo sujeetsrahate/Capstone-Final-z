@@ -219,5 +219,5 @@ This project is licensed under the MIT License.
 ---
 
 ## Contributors
-- Yogesh Priyadarshi ([GitHub Profile][(https://github.com/yogeshpri/Capstone-Project))]
+- Sujeet Subhash Rahate ([GitHub Profile][(https://github.com/sujeetsrahate/Capstone-Final-z))]
 
