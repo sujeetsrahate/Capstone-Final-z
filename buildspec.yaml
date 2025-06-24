@@ -18,6 +18,13 @@ phases:
     commands:
       - echo Installing dependencies...
       - yum install -y jq maven docker unzip
+      - echo Logging into Docker Hub to avoid rate limits...
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - echo Installing sonar-scanner...
+      - curl -sSLo sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+      - unzip sonar-scanner.zip
+      - export PATH=$PATH:$PWD/sonar-scanner-4.8.0.2856-linux/bin
+      - sonar-scanner --version  # optional
 
   pre_build:
     commands:
@@ -28,26 +35,40 @@ phases:
   build:
     commands:
       - echo Building frontend Docker image...
-      - docker build -t ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${FRONTEND_REPO}:${IMAGE_TAG} ${FRONTEND_DIR}
+      - docker build -t $FRONTEND_REPO:$IMAGE_TAG $FRONTEND_DIR
+      - docker tag $FRONTEND_REPO:$IMAGE_TAG ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
 
-      - echo Building backend application...
-      - cd ${BACKEND_DIR}
-      - mvn clean package -DskipTests
       - echo Building backend Docker image...
-      - docker build -t ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${BACKEND_REPO}:${IMAGE_TAG} .
+      - cd $BACKEND_DIR
+      - mvn clean package -DskipTests
+
+      - echo Running SonarQube analysis...
+      - mvn verify sonar:sonar \
+          -Dsonar.projectKey=sujeet-project-key \
+          -Dsonar.projectName='sujeet-project-name' \
+          -Dsonar.host.url=http://44.223.243.69 \
+          -Dsonar.token=sqp_5c2a080171555d02c804a57c3cfc2c3a0239ea75
+
       - cd -
+      - docker build -t $BACKEND_REPO:$IMAGE_TAG $BACKEND_DIR
+      - docker tag $BACKEND_REPO:$IMAGE_TAG ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
 
   post_build:
     commands:
-      - echo Pushing Docker images to ECR...
-      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${FRONTEND_REPO}:${IMAGE_TAG}
-      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${BACKEND_REPO}:${IMAGE_TAG}
+      - echo Pushing images to ECR...
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG
+      - docker push ${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG
 
       - echo Generating Kubernetes manifests...
       - mkdir -p k8s-out
-      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${FRONTEND_REPO}:${IMAGE_TAG}|g" ${K8S_MANIFEST_DIR}/react-event-deploy.yaml > k8s-out/react-event-deploy.yaml
-      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${BACKEND_REPO}:${IMAGE_TAG}|g" ${K8S_MANIFEST_DIR}/springboot-deploy.yaml > k8s-out/springboot-deploy.yaml
-      - cp ${K8S_MANIFEST_DIR}/*.yaml k8s-out/
+      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$FRONTEND_REPO:$IMAGE_TAG|g" $K8S_MANIFEST_DIR/react-event-deploy.yaml > k8s-out/react-event-deploy.yaml
+      - sed "s|IMAGE_PLACEHOLDER|${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/$BACKEND_REPO:$IMAGE_TAG|g" $K8S_MANIFEST_DIR/springboot-deploy.yaml > k8s-out/springboot-deploy.yaml
+      - cp $K8S_MANIFEST_DIR/react-event-service.yaml k8s-out/react-event-service.yaml
+      - cp $K8S_MANIFEST_DIR/java-springboot-service.yaml k8s-out/java-springboot-service.yaml
+      - cp $K8S_MANIFEST_DIR/mysql-deploy.yaml k8s-out/mysql-deploy.yaml
+      - cp $K8S_MANIFEST_DIR/mysql-service.yaml k8s-out/mysql-service.yaml
+      - cp $K8S_MANIFEST_DIR/pv.yaml k8s-out/pv.yaml
+      - cp $K8S_MANIFEST_DIR/pvc.yaml k8s-out/pvc.yaml
 
 artifacts:
   base-directory: k8s-out
