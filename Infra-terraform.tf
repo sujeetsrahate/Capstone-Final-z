@@ -1,3 +1,15 @@
+
+
+
+
+Git Repo Terraform-Infrastructure: https://github.com/sujeetsrahate/Capstone-Teraform-Infra
+this repo use for making infrastructure because infra can be made through pipeline
+
+
+
+
+
+
 # Terraform version
 terraform {
   required_version = ">= 1.3.0"
