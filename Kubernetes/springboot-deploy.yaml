@@ -2,7 +2,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spring-boot-deploy
-  namespace: caps
 spec:
   selector:
     matchLabels:
