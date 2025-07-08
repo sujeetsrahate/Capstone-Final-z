@@ -9,7 +9,7 @@ env:
     FRONTEND_DIR: Frontend-ReactJs/event-management-dashboard
     BACKEND_DIR: Backend-Java/Event_Managment
     K8S_MANIFEST_DIR: Kubernetes
-    DOCKER_USERNAME: your-dockerhub-username     # Set this in CodeBuild environment
+    DOCKER_USERNAME: sujeetsr07                  # Set this in CodeBuild environment
     DOCKER_PASSWORD: your-dockerhub-password     # Set this in CodeBuild environment
 
 phases:
