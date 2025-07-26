@@ -46,8 +46,8 @@ The Event Management Dashboard is a web-based application designed to help organ
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yogeshpri/Capstone-Project
-   cd event-management-dashboard
+   git clone https://github.com/sujeetsrahate/Capstone-Final-z
+   cd Capstone-Final-z
    ```
 
 2. Install dependencies:
@@ -66,8 +66,8 @@ The Event Management Dashboard is a web-based application designed to help organ
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yogeshpri/Capstone-Project
-   cd event-management-dashboard-backend
+   git clone https://github.com/sujeetsrahate/Capstone-Final-z
+   cd Capstone-Final-z
    ```
 
 2. Set up the database:
