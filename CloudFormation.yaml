@@ -16,6 +16,8 @@ Metadata:
           - PublicSubnet2Cidr
           - PrivateSubnet1Cidr
           - PrivateSubnet2Cidr
+          - PrivateSubnet3Cidr
+          - PrivateSubnet4Cidr
       - Label:
           default: Database Configuration
         Parameters:
